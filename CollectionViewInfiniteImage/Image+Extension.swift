@@ -12,7 +12,9 @@ import UIKit
 
 extension UIImageView {
     
-    static var mapping = [Int : UIImage]()
+    static var imagePool = [Int : UIImage]()
+    
+    static var taskPool = [URLSessionDataTask]()
     
     func showImage(index: Int, url:URL) {
         
@@ -27,19 +29,22 @@ extension UIImageView {
             
             guard let data = data else { return assertionFailure("data is nil") }
             
-            FileManagerObject.share.dateWriteToFileWithTmp(data: data, url: url)
+//            FileManagerObject.share.dateWriteToFileWithTmp(data: data, url: url)
             
             DispatchQueue.main.async {
-//                UIImageView.mapping[index] = UIImage(data: data)
+                UIImageView.imagePool[index] = UIImage(data: data)
                 
                 if self.image == nil {  //4. self.image 是reused的 為nil 表示現在是第一打api
-//                    self.image = UIImageView.mapping[index]
-                    FileManagerObject.share.fetchTmpFileImage(url: url) { [weak self] image in
-                        self?.image = image
-                    }
+                    self.image = UIImageView.imagePool[index]
+//                    FileManagerObject.share.fetchTmpFileImage(url: url) { [weak self] image in
+//                        self?.image = image
+//                    }
                 }
             }
         }
+        
+        
+        UIImageView.taskPool.append(task)
         
         task.resume()
     }
