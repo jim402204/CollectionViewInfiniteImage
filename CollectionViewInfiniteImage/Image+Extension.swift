@@ -49,4 +49,43 @@ extension UIImageView {
         task.resume()
     }
     
+    /// 限制當前能執行thread的最大數量 避免滑動後task滯後情況   選擇array 先進後出 將來不及執行的task cancel
+    static func limitTaskCount(maxLimit: Int = 100, relaseAmount: ClosedRange<Int> = (0...29)) {
+        
+        DispatchQueue.global().sync { //一直觸發 選擇同步 避免多次remove 造成同意記憶體多次釋放 閃退
+//            print("count \(UIImageView.taskPool.count)")
+            
+            if UIImageView.taskPool.count > maxLimit {
+                
+                let relaseSequence = relaseAmount
+                
+                let needCancelArray = UIImageView.taskPool[relaseSequence]
+                needCancelArray.forEach { $0.cancel() }
+                
+                if UIImageView.taskPool.count > relaseSequence.count {
+                    UIImageView.taskPool.removeSubrange(relaseSequence)
+                }
+            }
+        }
+    }
+    
+    /// 限制儲存的model數量 避免app記憶體炸了
+    static func limitModelCount(maxLimit: Int = 200, relaseAmount: Int = 100 ) {
+        
+        DispatchQueue.global().sync {
+            
+            if UIImageView.imagePool.count > maxLimit {
+                let filter = UIImageView.imagePool.keys.sorted()
+                //            print("filter: \(filter)")
+                
+                let limitAmount = relaseAmount
+                let removeCounts = UIImageView.imagePool.count - (UIImageView.imagePool.count - limitAmount)
+                let removeArray = filter[0...(removeCounts - 1)]
+                //            print("removeArray: \(removeArray)")
+                
+                removeArray.forEach{ UIImageView.imagePool[$0] = nil }
+            }
+        }
+    }
+    
 }
