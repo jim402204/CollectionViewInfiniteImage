@@ -72,18 +72,20 @@ extension UIImageView {
     /// 限制儲存的model數量 避免app記憶體炸了
     static func limitModelCount(maxLimit: Int = 200, relaseAmount: Int = 100 ) {
         
-        DispatchQueue.global().sync {
+        let limitAmount = relaseAmount
+        let removeCounts = UIImageView.imagePool.count - (UIImageView.imagePool.count - limitAmount)
+        
+        DispatchQueue.global().async {
             
             if UIImageView.imagePool.count > maxLimit {
                 let filter = UIImageView.imagePool.keys.sorted()
                 //            print("filter: \(filter)")
                 
-                let limitAmount = relaseAmount
-                let removeCounts = UIImageView.imagePool.count - (UIImageView.imagePool.count - limitAmount)
                 let removeArray = filter[0...(removeCounts - 1)]
                 //            print("removeArray: \(removeArray)")
-                
-                removeArray.forEach{ UIImageView.imagePool[$0] = nil }
+                DispatchQueue.global().sync {
+                    removeArray.forEach{ UIImageView.imagePool[$0] = nil }
+                }
             }
         }
     }
